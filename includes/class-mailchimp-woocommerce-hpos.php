@@ -11,12 +11,20 @@ class MailChimp_WooCommerce_HPOS {
 	}
 
 	/**
-	 * @param $post_id
+	 * @param $post_id_or_order_id
 	 *
 	 * @return mixed
 	 */
-	public static function get_order( $post_id )
+	public static function get_order( $post_id_or_order_id )
 	{
+		if (function_exists('wc_sequential_order_numbers')) {
+			$post_id = wc_sequential_order_numbers()->find_order_by_order_number( $post_id_or_order_id );
+			if (!$post_id) {
+				$post_id = $post_id_or_order_id;
+			}
+		} else {
+			$post_id = $post_id_or_order_id;
+		}
 		return wc_get_order($post_id);
 	}
 

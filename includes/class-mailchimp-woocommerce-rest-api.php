@@ -389,22 +389,13 @@ class MailChimp_WooCommerce_Rest_Api
                 ];
                 break;
             case 'resync_order':
-                $order = new WC_Order($data['id']);
-                if (!$order->get_date_created()) {
-                    $response = [
-                        'title' => "Error syncing order",
-                        'description' => "This order id does not exist.",
-                        'type' => 'error',
-                    ];
-                } else {
-                    $job = new MailChimp_WooCommerce_Single_Order($order->get_id());
-                    $data = $job->handle();
-                    $response = [
-                        'title' => "Executed order resync",
-                        'description' => "Check the store logs for details.",
-                        'type' => 'success',
-                    ];
-                }
+                $job = new MailChimp_WooCommerce_Single_Order($data['id']);
+                $data = $job->handle();
+                $response = [
+                    'title' => "Executed order resync",
+                    'description' => "Check the store logs for details.",
+                    'type' => 'success',
+                ];
                 break;
             case 'resync_product':
                 $product = new WC_Product($data['id']);
@@ -506,9 +497,15 @@ class MailChimp_WooCommerce_Rest_Api
         switch ($body['resource']) {
             case 'order':                
                 $order = MailChimp_WooCommerce_HPOS::get_order($body['resource_id']);
-                /*$order = get_post($body['resource_id']);*/
-                $mc = !$order->get_id() ? null : mailchimp_get_api()->getStoreOrder($store_id, $order->get_id());
-                if ($order->get_id()) {
+                $orderId = null;
+                if (method_exists($order, 'get_order_number')) {
+                    $mc = !$order->get_order_number() ? null : mailchimp_get_api()->getStoreOrder($store_id, $order->get_order_number());
+                    $orderId = $order->get_order_number();
+                } else {
+                    $mc = !$order->get_id() ? null : mailchimp_get_api()->getStoreOrder($store_id, $order->get_id());
+                    $orderId = $order->get_id();
+                }
+                if ($orderId) {
                     $transformer = new MailChimp_WooCommerce_Transform_Orders();
                     $platform = $transformer->transform($order)->toArray();
                 }
